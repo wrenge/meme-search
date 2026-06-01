@@ -1,5 +1,9 @@
 # See https://git-scm.com/docs/gitattributes for more about git attribute files.
 
+# Ensure shell scripts and Ruby executables always use LF (required inside Linux containers)
+bin/* eol=lf
+*.sh eol=lf
+
 # Mark the database schema as having been generated.
 db/schema.rb linguist-generated
 

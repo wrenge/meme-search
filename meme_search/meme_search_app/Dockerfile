@@ -64,7 +64,7 @@ COPY --from=build "${BUNDLE_PATH}" "${BUNDLE_PATH}"
 COPY --from=build /rails /rails
 
 # Download model weights BEFORE user switch (requires root permissions)
-RUN ruby embedding_model_download.rb
+RUN bundle exec ruby ./embedding_model_download.rb
 
 # Run and own only the runtime files as a non-root user for security
 RUN groupadd --system --gid 1000 rails && \

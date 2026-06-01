@@ -15,6 +15,7 @@ begin
           "Create a migration (change_column :image_embeddings, :embedding, :vector, limit: #{$embedding_dimensions}) " \
           "or choose a model that produces #{db_limit}-dimensional embeddings."
   end
-rescue ActiveRecord::NoDatabaseError, ActiveRecord::StatementInvalid => e
+rescue ActiveRecord::NoDatabaseError, ActiveRecord::StatementInvalid,
+       ActiveRecord::ConnectionNotEstablished, PG::Error => e
   Rails.logger.warn "Could not validate embedding dimensions against DB: #{e.message}"
 end
