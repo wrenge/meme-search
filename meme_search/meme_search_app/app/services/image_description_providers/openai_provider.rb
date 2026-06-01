@@ -65,8 +65,12 @@ module ImageDescriptionProviders
 
       response = http.request(request)
       if response.is_a?(Net::HTTPSuccess)
-        content = JSON.parse(response.body).dig("choices", 0, "message", "content").to_s.strip
-        return Result.new(success: true, message: "OpenAI connection test passed.", queued: false) if content.present?
+        parsed = JSON.parse(response.body)
+        content = parsed.dig("choices", 0, "message", "content").to_s.strip
+        if content.present?
+          server_model = parsed["model"].presence || model
+          return Result.new(success: true, message: "OpenAI connection test passed. Model: #{server_model}", queued: false)
+        end
 
         return Result.new(success: false, message: UNSUPPORTED_TEST_RESPONSE_MESSAGE, queued: false)
       end
