@@ -1,7 +1,7 @@
 require 'bundler/setup'
 require 'informers'
 
-model = Informers.pipeline("embedding", "sentence-transformers/all-MiniLM-L6-v2")
+model = Informers.pipeline("embedding", ENV.fetch("EMBEDDING_MODEL", "sentence-transformers/all-MiniLM-L6-v2"))
 
 def compute(model, snippet)
   embedding = model.call(snippet)

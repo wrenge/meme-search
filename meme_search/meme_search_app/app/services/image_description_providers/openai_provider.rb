@@ -9,7 +9,7 @@ module ImageDescriptionProviders
   class OpenaiProvider
     DEFAULT_BASE_URL = "https://api.openai.com/v1"
     DEFAULT_MODEL = "gpt-4o-mini"
-    PROMPT = "Describe this meme for semantic search. Include visible text, objects, people, setting, and the joke or sentiment. Keep it concise."
+    DEFAULT_PROMPT = "Describe this meme for semantic search. Include visible text, objects, people, setting, and the joke or sentiment. Keep it concise."
     TEST_IMAGE_DATA_URL = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAEAAAABACAIAAAAlC+aJAAAA+UlEQVR42u3aQQ7CIBCF4XcJz9K1R/DeXqdp0pUujYl0GBh5DC9hyeL/YqOVAftxTr0ggAACCCAANeB83mYCvHMtiw5g7I6QYFR6LwbGprczQFLvNoCn3mcAVb3DALb6WgMI66sM4Ky3G0BbbzQsABhYbzF0A2z3R1WWfX8TwJjyubrvLxuWB3zVXDbV7m8C2J/m6E+gYBAg/lvoT4BRvwYC0AKo6gsGPUICCCDAr1c0y4oFlA3uaAcm5HXal0IKcD/Z4YCF/tTzAnSwRQCY/mw0w+l0hvlAhglNhhlZhillhjlxhkl9krsSSW6r5LkvpCtnAgggwGqAFzX/iQwCblWQAAAAAElFTkSuQmCC"
     TEST_PROMPT = "Reply with ok if you can inspect this image."
     UNSUPPORTED_TEST_RESPONSE_MESSAGE = "OpenAI connection test returned an unsupported response."
@@ -140,7 +140,7 @@ module ImageDescriptionProviders
             {
               role: "user",
               content: [
-                { type: "text", text: PROMPT },
+                { type: "text", text: prompt },
                 { type: "image_url", image_url: { url: data_uri(image_core) } }
               ]
             }
@@ -225,6 +225,10 @@ module ImageDescriptionProviders
 
       def model
         configuration.openai_model.presence || DEFAULT_MODEL
+      end
+
+      def prompt
+        ENV.fetch("LLM_USER_PROMPT", DEFAULT_PROMPT)
       end
   end
 end

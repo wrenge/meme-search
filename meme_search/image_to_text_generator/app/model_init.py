@@ -1,7 +1,7 @@
 from PIL import Image
 import torch
 from transformers import AutoModelForCausalLM, AutoModelForVision2Seq, AutoProcessor
-from constants import available_models
+from constants import available_models, LLM_USER_PROMPT
 from log_config import logging
 
 
@@ -119,7 +119,10 @@ class MoondreamImageToText:
 
         # process image
         logging.info(f"INFO: starting image to text extraction for image --> {image_path}")
-        caption = self.model.caption(image, length="short")["caption"]
+        if LLM_USER_PROMPT:
+            caption = self.model.query(image, LLM_USER_PROMPT)["answer"]
+        else:
+            caption = self.model.caption(image, length="short")["caption"]
         logging.info("INFO: ... done")
         return caption.strip()
 
@@ -195,7 +198,10 @@ class MoondreamQuantizedImageToText:
 
         # process image
         logging.info(f"INFO: starting image to text extraction for image --> {image_path}")
-        caption = self.model.caption(image, length="short")["caption"]
+        if LLM_USER_PROMPT:
+            caption = self.model.query(image, LLM_USER_PROMPT)["answer"]
+        else:
+            caption = self.model.caption(image, length="short")["caption"]
         logging.info("INFO: ... done")
         return caption.strip()
 
@@ -367,13 +373,14 @@ class SmolVLM256ImageToText:
         # load in image
         print(f"INFO: starting image to text extraction for image {image_path}...")
         image = load_rgb_image(image_path)
+        user_prompt = LLM_USER_PROMPT or "Can you describe this image?"
         # Create input messages
         messages = [
             {
                 "role": "user",
                 "content": [
                     {"type": "image"},
-                    {"type": "text", "text": "Can you describe this image?"}
+                    {"type": "text", "text": user_prompt}
                 ]
             },
         ]
@@ -394,9 +401,8 @@ class SmolVLM256ImageToText:
         # clean up
         raw_output = generated_texts[0]
 
-        substring = "Can you describe this image?"
-        if substring in raw_output:
-            raw_output = raw_output.split(substring, 1)[-1].strip()
+        if user_prompt in raw_output:
+            raw_output = raw_output.split(user_prompt, 1)[-1].strip()
         substring = "### Analysis and Description:"
         if substring in raw_output:
             raw_output = raw_output.split(substring, 1)[0].strip()
@@ -453,13 +459,14 @@ class SmolVLM500ImageToText:
         # load in image
         print(f"INFO: starting image to text extraction for image {image_path}...")
         image = load_rgb_image(image_path)
+        user_prompt = LLM_USER_PROMPT or "Can you describe this image?"
         # Create input messages
         messages = [
             {
                 "role": "user",
                 "content": [
                     {"type": "image"},
-                    {"type": "text", "text": "Can you describe this image?"}
+                    {"type": "text", "text": user_prompt}
                 ]
             },
         ]
@@ -480,9 +487,8 @@ class SmolVLM500ImageToText:
         # clean up
         raw_output = generated_texts[0]
 
-        substring = "Can you describe this image?"
-        if substring in raw_output:
-            raw_output = raw_output.split(substring, 1)[-1].strip()
+        if user_prompt in raw_output:
+            raw_output = raw_output.split(user_prompt, 1)[-1].strip()
         substring = "### Analysis and Description:"
         if substring in raw_output:
             raw_output = raw_output.split(substring, 1)[0].strip()
