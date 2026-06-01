@@ -29,6 +29,7 @@ services:
     volumes: # <-- any additional meme directory must be mounted here - and placed in the /rails/public/memes directory in the container (see example below)
       - ./meme_search/memes/:/rails/public/memes # <-- example meme directory from the repository
       - ${MEME_SEARCH_DIRECT_UPLOADS_PATH:-./meme_search/direct-uploads}:/rails/public/memes/direct-uploads # <-- REQUIRED: directory for drag-and-drop uploads
+      - ${MEME_SEARCH_EMBEDDING_MODELS_PATH:-./meme_search/embedding-models}:/rails/models # <-- cache for non-default embedding models (downloaded on first run)
       # -  /route/to/my/personal/additional_memes/:/rails/public/memes/additional_memes # <-- personal meme collection - must be placed inside /rails/public/memes in the container
 
   meme_search_jobs:
@@ -51,6 +52,7 @@ services:
     volumes:
       - ./meme_search/memes/:/rails/public/memes
       - ${MEME_SEARCH_DIRECT_UPLOADS_PATH:-./meme_search/direct-uploads}:/rails/public/memes/direct-uploads
+      - ${MEME_SEARCH_EMBEDDING_MODELS_PATH:-./meme_search/embedding-models}:/rails/models
 
   image_to_text_generator:
     # Required only when IMAGE_DESCRIPTION_PROVIDER=local, which is the default.

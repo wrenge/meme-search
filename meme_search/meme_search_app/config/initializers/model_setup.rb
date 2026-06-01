@@ -1,6 +1,13 @@
 require "informers"
 
 embedding_model_name = ENV.fetch("EMBEDDING_MODEL", "sentence-transformers/all-MiniLM-L6-v2")
+baked_model_name     = ENV.fetch("BAKED_EMBEDDING_MODEL", "sentence-transformers/all-MiniLM-L6-v2")
+
+# Route HF_HOME so the fallback model uses the baked-in image cache (never
+# shadowed by a volume mount) and custom models use the volume-mounted cache
+# (downloaded on first run, persisted across restarts).
+ENV["HF_HOME"] = embedding_model_name == baked_model_name ? "/rails/models-default" : "/rails/models"
+
 $embedding_model = Informers.pipeline("embedding", embedding_model_name)
 
 test_vector = $embedding_model.call("test")

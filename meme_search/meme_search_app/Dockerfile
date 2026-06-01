@@ -63,13 +63,20 @@ FROM base
 COPY --from=build "${BUNDLE_PATH}" "${BUNDLE_PATH}"
 COPY --from=build /rails /rails
 
-# Download model weights BEFORE user switch (requires root permissions)
-RUN bundle exec ruby ./embedding_model_download.rb
+# Download model weights BEFORE user switch (requires root permissions).
+# Bake the configured embedding model into the image; override at build time with
+#   docker build --build-arg EMBEDDING_MODEL=Xenova/paraphrase-multilingual-MiniLM-L12-v2 ...
+ARG EMBEDDING_MODEL=sentence-transformers/all-MiniLM-L6-v2
+ENV EMBEDDING_MODEL=$EMBEDDING_MODEL \
+    BAKED_EMBEDDING_MODEL=$EMBEDDING_MODEL
+# Bake fallback into a separate dir so a volume mount on /rails/models never hides it
+RUN HF_HOME=/rails/models-default bundle exec ruby ./embedding_model_download.rb
 
 # Run and own only the runtime files as a non-root user for security
 RUN groupadd --system --gid 1000 rails && \
     useradd rails --uid 1000 --gid 1000 --create-home --shell /bin/bash && \
-    chown -R rails:rails db log storage tmp
+    chown -R rails:rails db log storage tmp /rails/models-default && \
+    mkdir -p /rails/models && chown rails:rails /rails/models
 USER 1000:1000
 
 # Entrypoint prepares the database.
