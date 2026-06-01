@@ -3,10 +3,12 @@ require "informers"
 embedding_model_name = ENV.fetch("EMBEDDING_MODEL", "sentence-transformers/all-MiniLM-L6-v2")
 baked_model_name     = ENV.fetch("BAKED_EMBEDDING_MODEL", "sentence-transformers/all-MiniLM-L6-v2")
 
-# Route HF_HOME so the fallback model uses the baked-in image cache (never
-# shadowed by a volume mount) and custom models use the volume-mounted cache
-# (downloaded on first run, persisted across restarts).
-ENV["HF_HOME"] = embedding_model_name == baked_model_name ? "/rails/models-default" : "/rails/models"
+# Route cache dir: fallback model uses the baked-in image path (never shadowed
+# by the volume mount); custom models use the volume-mounted path so downloads
+# persist across restarts. informers uses Informers.cache_dir (backed by XDG_CACHE_HOME).
+Informers.cache_dir = embedding_model_name == baked_model_name \
+  ? "/rails/models-default/informers" \
+  : "/rails/models/informers"
 
 $embedding_model = Informers.pipeline("embedding", embedding_model_name)
 

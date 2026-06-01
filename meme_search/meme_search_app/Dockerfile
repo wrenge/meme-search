@@ -69,14 +69,16 @@ COPY --from=build /rails /rails
 ARG EMBEDDING_MODEL=sentence-transformers/all-MiniLM-L6-v2
 ENV EMBEDDING_MODEL=$EMBEDDING_MODEL \
     BAKED_EMBEDDING_MODEL=$EMBEDDING_MODEL
-# Bake fallback into a separate dir so a volume mount on /rails/models never hides it
-RUN HF_HOME=/rails/models-default bundle exec ruby ./embedding_model_download.rb
+# Bake fallback into a separate dir so a volume mount on /rails/models never hides it.
+# informers uses XDG_CACHE_HOME (not HF_HOME); models land at $XDG_CACHE_HOME/informers/
+RUN XDG_CACHE_HOME=/rails/models-default bundle exec ruby ./embedding_model_download.rb
 
 # Run and own only the runtime files as a non-root user for security
 RUN groupadd --system --gid 1000 rails && \
     useradd rails --uid 1000 --gid 1000 --create-home --shell /bin/bash && \
-    chown -R rails:rails db log storage tmp /rails/models-default && \
-    mkdir -p /rails/models && chown rails:rails /rails/models
+    chown -R rails:rails db log storage tmp && \
+    mkdir -p /rails/models-default /rails/models && \
+    chown -R rails:rails /rails/models-default /rails/models
 USER 1000:1000
 
 # Entrypoint prepares the database.
