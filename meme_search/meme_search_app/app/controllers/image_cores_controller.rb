@@ -140,12 +140,20 @@ class ImageCoresController < ApplicationController
     # Get filtered image cores based on current filter params
     image_cores = get_filtered_image_cores
 
-    # Filter only images without descriptions
-    # Include: status = 0 (never generated) OR blank/null description (manually deleted)
-    images_without_descriptions = image_cores.where(
-      "status = ? OR description IS NULL OR description = ?",
-      0, ""
-    )
+    # Filter images to generate descriptions for.
+    # Include not_started images, and done images with a blank description.
+    # Explicitly exclude in_queue/processing/removing/failed — failed images
+    # were previously matched by "description IS NULL" since fail_with_error!
+    # never sets the description, causing them to be silently requeued and fail again.
+    base_scope = image_cores.where(status: :not_started)
+      .or(image_cores.where(status: :done).where("description IS NULL OR description = ?", ""))
+
+    images_without_descriptions =
+      if params[:include_failed] == "1"
+        base_scope.or(image_cores.where(status: :failed))
+      else
+        base_scope
+      end
 
     configuration = ImageDescriptionProviders::Configuration.current
     provider = ImageDescriptionProviders::Factory.build(configuration)
@@ -291,13 +299,14 @@ class ImageCoresController < ApplicationController
     # Get filtered image cores
     image_cores = get_filtered_image_cores
 
-    # Count images without descriptions
-    # Include: status = 0 (never generated) OR blank/null description (manually deleted)
-    # Count globally across all images, regardless of current filters
-    @images_without_descriptions_count = ImageCore.where(
-      "status = ? OR description IS NULL OR description = ?",
-      0, ""
-    ).count
+    # Count images that need descriptions — same scope as bulk_generate_descriptions base_scope.
+    # Excludes failed images (they have null descriptions too, which the old OR description IS NULL
+    # accidentally included, causing them to be requeued by Generate All and immediately fail again).
+    @images_without_descriptions_count = ImageCore.where(status: :not_started)
+      .or(ImageCore.where(status: :done).where("description IS NULL OR description = ?", ""))
+      .count
+
+    @failed_images_count = ImageCore.where(status: :failed).count
 
     # Paginate
     @pagy, @image_cores = pagy(image_cores)

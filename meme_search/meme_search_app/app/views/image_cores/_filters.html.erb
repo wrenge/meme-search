@@ -81,27 +81,109 @@
         Switch to Grid View
       </button>
 
-      <!-- Bulk Generation Button -->
+      <!-- Bulk Generation Button(s) -->
       <% if @images_without_descriptions_count > 0 %>
+        <% if @failed_images_count > 0 %>
+          <!-- Split button with dropdown when both new and failed images exist -->
+          <div class="relative flex" data-controller="dropdown">
+            <button
+              type="button"
+              onclick="if(confirm('This will queue <%= @images_without_descriptions_count %> images for description generation. Continue?')) {
+                const form = document.createElement('form');
+                form.method = 'POST';
+                form.action = '<%= bulk_generate_descriptions_image_cores_path %>';
+                form.innerHTML = '<input type=\'hidden\' name=\'authenticity_token\' value=\'<%= form_authenticity_token %>\'>' +
+                  '<input type=\'hidden\' name=\'selected_tag_names\' value=\'<%= params[:selected_tag_names] %>\'>' +
+                  '<input type=\'hidden\' name=\'selected_path_names\' value=\'<%= params[:selected_path_names] %>\'>' +
+                  '<input type=\'hidden\' name=\'has_embeddings\' value=\'<%= params[:has_embeddings] %>\'>';
+                document.body.appendChild(form);
+                form.submit();
+              }"
+              class="pl-6 pr-4 py-3 text-white font-bold bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-600 hover:to-teal-700 rounded-l-2xl shadow-lg hover:shadow-xl transition-all cursor-pointer">
+              <span class="flex items-center gap-2">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"></path>
+                </svg>
+                Generate All (<%= @images_without_descriptions_count %>)
+              </span>
+            </button>
+            <button
+              type="button"
+              data-action="dropdown#toggle"
+              class="px-3 py-3 text-white font-bold bg-gradient-to-r from-teal-600 to-teal-700 hover:from-teal-700 hover:to-teal-800 border-l border-teal-400 rounded-r-2xl shadow-lg hover:shadow-xl transition-all cursor-pointer">
+              <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
+              </svg>
+            </button>
+            <div data-dropdown-target="menu" class="hidden absolute top-full left-0 mt-1 bg-white dark:bg-slate-800 border border-gray-200 dark:border-gray-700 rounded-xl shadow-xl z-50 min-w-max">
+              <button
+                type="button"
+                onclick="if(confirm('This will queue <%= @images_without_descriptions_count + @failed_images_count %> images (including <%= @failed_images_count %> failed). Continue?')) {
+                  const form = document.createElement('form');
+                  form.method = 'POST';
+                  form.action = '<%= bulk_generate_descriptions_image_cores_path %>';
+                  form.innerHTML = '<input type=\'hidden\' name=\'authenticity_token\' value=\'<%= form_authenticity_token %>\'>' +
+                    '<input type=\'hidden\' name=\'selected_tag_names\' value=\'<%= params[:selected_tag_names] %>\'>' +
+                    '<input type=\'hidden\' name=\'selected_path_names\' value=\'<%= params[:selected_path_names] %>\'>' +
+                    '<input type=\'hidden\' name=\'has_embeddings\' value=\'<%= params[:has_embeddings] %>\'>' +
+                    '<input type=\'hidden\' name=\'include_failed\' value=\'1\'>';
+                  document.body.appendChild(form);
+                  form.submit();
+                }"
+                class="w-full flex items-center gap-2 px-4 py-3 text-sm font-semibold text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-slate-700 rounded-xl">
+                <svg class="w-4 h-4 text-red-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path>
+                </svg>
+                Generate All + Failed (<%= @images_without_descriptions_count + @failed_images_count %>)
+              </button>
+            </div>
+          </div>
+        <% else %>
+          <!-- Plain button, no failed images -->
+          <button
+            type="button"
+            onclick="if(confirm('This will queue <%= @images_without_descriptions_count %> images for description generation. Continue?')) {
+              const form = document.createElement('form');
+              form.method = 'POST';
+              form.action = '<%= bulk_generate_descriptions_image_cores_path %>';
+              form.innerHTML = '<input type=\'hidden\' name=\'authenticity_token\' value=\'<%= form_authenticity_token %>\'>' +
+                '<input type=\'hidden\' name=\'selected_tag_names\' value=\'<%= params[:selected_tag_names] %>\'>' +
+                '<input type=\'hidden\' name=\'selected_path_names\' value=\'<%= params[:selected_path_names] %>\'>' +
+                '<input type=\'hidden\' name=\'has_embeddings\' value=\'<%= params[:has_embeddings] %>\'>';
+              document.body.appendChild(form);
+              form.submit();
+            }"
+            class="px-6 py-3 text-white font-bold bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-600 hover:to-teal-700 rounded-2xl shadow-lg hover:shadow-xl hover:scale-105 transition-all cursor-pointer">
+            <span class="flex items-center gap-2">
+              <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"></path>
+              </svg>
+              Generate All (<%= @images_without_descriptions_count %>)
+            </span>
+          </button>
+        <% end %>
+      <% elsif @failed_images_count > 0 %>
+        <!-- Only failed images exist, no new ones to generate -->
         <button
           type="button"
-          onclick="if(confirm('This will queue <%= @images_without_descriptions_count %> images for description generation. Continue?')) {
+          onclick="if(confirm('This will retry description generation for <%= @failed_images_count %> failed images. Continue?')) {
             const form = document.createElement('form');
             form.method = 'POST';
             form.action = '<%= bulk_generate_descriptions_image_cores_path %>';
             form.innerHTML = '<input type=\'hidden\' name=\'authenticity_token\' value=\'<%= form_authenticity_token %>\'>' +
               '<input type=\'hidden\' name=\'selected_tag_names\' value=\'<%= params[:selected_tag_names] %>\'>' +
               '<input type=\'hidden\' name=\'selected_path_names\' value=\'<%= params[:selected_path_names] %>\'>' +
-              '<input type=\'hidden\' name=\'has_embeddings\' value=\'<%= params[:has_embeddings] %>\'>';
+              '<input type=\'hidden\' name=\'has_embeddings\' value=\'<%= params[:has_embeddings] %>\'>' +
+              '<input type=\'hidden\' name=\'include_failed\' value=\'1\'>';
             document.body.appendChild(form);
             form.submit();
           }"
-          class="px-6 py-3 text-white font-bold bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-600 hover:to-teal-700 rounded-2xl shadow-lg hover:shadow-xl hover:scale-105 transition-all cursor-pointer">
+          class="px-6 py-3 text-white font-bold bg-gradient-to-r from-red-500 to-rose-600 hover:from-red-600 hover:to-rose-700 rounded-2xl shadow-lg hover:shadow-xl hover:scale-105 transition-all cursor-pointer">
           <span class="flex items-center gap-2">
             <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"></path>
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path>
             </svg>
-            Generate All (<%= @images_without_descriptions_count %>)
+            Retry Failed (<%= @failed_images_count %>)
           </span>
         </button>
       <% end %>
