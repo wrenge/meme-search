@@ -7,11 +7,13 @@
 #   ./build_and_push.sh --platform multi     # Build AMD64 + ARM64 images
 #   ./build_and_push.sh --service app        # Build only Rails app
 #   ./build_and_push.sh --no-push            # Build locally without pushing
+#   ./build_and_push.sh --registry git.example.com --user myuser  # Push to custom registry
 #
 # Options:
 #   --platform <arm64|amd64|multi>  Platform to build [default: arm64]
 #   --service <app|python|all>      Service to build [default: all]
-#   --user <username>               GitHub username [default: neonwatty]
+#   --registry <hostname>           Container registry hostname [default: ghcr.io]
+#   --user <username>               Registry username [default: neonwatty]
 #   --no-push                       Build locally without pushing
 #   --help                          Show detailed help
 
@@ -20,6 +22,7 @@ set -e
 # Default values
 PLATFORM="linux/arm64"
 SERVICE="all"
+REGISTRY="ghcr.io"
 GITHUB_USER="neonwatty"
 PUSH_FLAG="--push"
 PLATFORM_NAME="arm64"
@@ -67,6 +70,10 @@ while [[ $# -gt 0 ]]; do
       esac
       shift 2
       ;;
+    --registry)
+      REGISTRY=$2
+      shift 2
+      ;;
     --user)
       GITHUB_USER=$2
       shift 2
@@ -83,15 +90,17 @@ while [[ $# -gt 0 ]]; do
       echo "OPTIONS:"
       echo "  --platform <platform>   Platform to build (arm64, amd64, multi) [default: arm64]"
       echo "  --service <service>     Service to build (app, python, all) [default: all]"
-      echo "  --user <username>       GitHub username [default: neonwatty]"
+      echo "  --registry <hostname>   Container registry hostname [default: ghcr.io]"
+      echo "  --user <username>       Registry username [default: neonwatty]"
       echo "  --no-push              Build locally without pushing to registry"
       echo "  --help                 Show this help message"
       echo ""
       echo "Examples:"
-      echo "  ./build_and_push.sh                                    # Build all services for ARM64 and push"
-      echo "  ./build_and_push.sh --platform multi                  # Build multi-platform images"
-      echo "  ./build_and_push.sh --service app --platform arm64    # Build only Rails app for ARM64"
-      echo "  ./build_and_push.sh --no-push                         # Build locally without pushing"
+      echo "  ./build_and_push.sh                                              # Build all services for ARM64 and push to ghcr.io"
+      echo "  ./build_and_push.sh --platform multi                            # Build multi-platform images"
+      echo "  ./build_and_push.sh --service app --platform arm64              # Build only Rails app for ARM64"
+      echo "  ./build_and_push.sh --registry git.example.com --user myuser   # Push to custom registry"
+      echo "  ./build_and_push.sh --no-push                                   # Build locally without pushing"
       exit 0
       ;;
     *)
@@ -127,7 +136,8 @@ echo -e "${BLUE}Build Configuration${NC}"
 echo -e "${BLUE}========================================${NC}"
 echo -e "Platform:     ${GREEN}${PLATFORM_NAME}${NC}"
 echo -e "Service:      ${GREEN}${SERVICE}${NC}"
-echo -e "GitHub User:  ${GREEN}${GITHUB_USER}${NC}"
+echo -e "Registry:     ${GREEN}${REGISTRY}${NC}"
+echo -e "User:         ${GREEN}${GITHUB_USER}${NC}"
 if [ "$PUSH_FLAG" = "--push" ]; then
   echo -e "Action:       ${GREEN}Build and Push${NC}"
 else
@@ -148,7 +158,7 @@ build_service() {
   START_TIME=$(date +%s)
 
   docker buildx build --platform "$PLATFORM" \
-    -t "ghcr.io/${GITHUB_USER}/${image_name}:latest" \
+    -t "${REGISTRY}/${GITHUB_USER}/${image_name}:latest" \
     $PUSH_FLAG \
     $dockerfile_flag \
     "$context_path"
@@ -177,9 +187,9 @@ if [ "$PUSH_FLAG" = "--push" ]; then
   echo ""
   echo -e "Images pushed to:"
   if [ "$SERVICE" = "app" ] || [ "$SERVICE" = "all" ]; then
-    echo -e "  ${BLUE}ghcr.io/${GITHUB_USER}/meme_search:latest${NC}"
+    echo -e "  ${BLUE}${REGISTRY}/${GITHUB_USER}/meme_search:latest${NC}"
   fi
   if [ "$SERVICE" = "python" ] || [ "$SERVICE" = "all" ]; then
-    echo -e "  ${BLUE}ghcr.io/${GITHUB_USER}/image_to_text_generator:latest${NC}"
+    echo -e "  ${BLUE}${REGISTRY}/${GITHUB_USER}/image_to_text_generator:latest${NC}"
   fi
 fi
