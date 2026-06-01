@@ -67,13 +67,18 @@ class ImageCoresController < ApplicationController
         if provider.queued_provider?
           provider.generate(@image_core)
         else
-          attempt = @image_core.start_description_generation_attempt!(
-            provider: provider_name(provider, configuration),
-            provider_settings: configuration.job_options
-          )
-          @image_core.update!(status: :in_queue)
-          GenerateImageDescriptionJob.perform_later(@image_core.id, configuration.job_options, attempt.id)
-          ImageDescriptionProviders::Result.new(success: true, message: "Queued description generation.", queued: true)
+          begin
+            attempt = @image_core.start_description_generation_attempt!(
+              provider: provider_name(provider, configuration),
+              provider_settings: configuration.job_options
+            )
+            @image_core.update!(status: :in_queue)
+            GenerateImageDescriptionJob.perform_later(@image_core.id, configuration.job_options, attempt.id)
+            ImageDescriptionProviders::Result.new(success: true, message: "Queued description generation.", queued: true)
+          rescue StandardError => e
+            Rails.logger.error "Failed to queue description for image #{@image_core.id}: #{e.class}: #{e.message}"
+            ImageDescriptionProviders::Result.new(success: false, message: e.message, queued: false)
+          end
         end
 
       respond_to do |format|
