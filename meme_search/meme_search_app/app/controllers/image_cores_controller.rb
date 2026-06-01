@@ -77,6 +77,8 @@ class ImageCoresController < ApplicationController
             ImageDescriptionProviders::Result.new(success: true, message: "Queued description generation.", queued: true)
           rescue StandardError => e
             Rails.logger.error "Failed to queue description for image #{@image_core.id}: #{e.class}: #{e.message}"
+            attempt&.fail_with_error!(e.message)
+            @image_core.update(status: :failed) unless attempt
             ImageDescriptionProviders::Result.new(success: false, message: e.message, queued: false)
           end
         end
@@ -198,7 +200,8 @@ class ImageCoresController < ApplicationController
           queued_count += 1
         rescue StandardError => e
           Rails.logger.error "Failed to enqueue image description job for image #{image_core.id}: #{e.class}: #{e.message}"
-          image_core.update(status: :failed)
+          attempt&.fail_with_error!(e.message)
+          image_core.update(status: :failed) unless attempt
           failed_count += 1
         end
       end

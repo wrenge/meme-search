@@ -64,7 +64,18 @@ class ImageCore < ApplicationRecord
   def start_description_generation_attempt!(provider:, provider_settings: {}, bulk_operation: nil)
     with_lock do
       active_attempt = active_description_generation_attempt
-      raise ActiveRecord::RecordInvalid, active_attempt if active_attempt.present?
+      if active_attempt.present?
+        if failed?
+          # Orphaned active attempt left by a previous crash/rescue path — cancel it so retry can proceed.
+          active_attempt.update_columns(
+            status: ImageDescriptionGenerationAttempt.statuses[:canceled],
+            canceled_at: Time.current,
+            completed_at: Time.current
+          )
+        else
+          raise ActiveRecord::RecordInvalid, active_attempt
+        end
+      end
 
       image_description_generation_attempts.create!(
         provider: provider,
