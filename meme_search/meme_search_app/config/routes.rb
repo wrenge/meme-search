@@ -20,6 +20,7 @@ Rails.application.routes.draw do
         post :save_openai_settings
         post :test_openai_settings
         delete :clear_openai_key
+        delete :clear_descriptions
       end
     end
   end

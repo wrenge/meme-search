@@ -48,6 +48,12 @@ module Settings
       redirect_to settings_image_to_texts_path(provider_tab: "openai"), alert: e.record.errors.full_messages.to_sentence
     end
 
+    def clear_descriptions
+      ImageEmbedding.delete_all
+      ImageCore.update_all(description: nil, status: 0)
+      redirect_to settings_image_to_texts_path, notice: "All descriptions and search vectors have been cleared."
+    end
+
     def clear_openai_key
       setting = DescriptionProviderSetting.current
       setting.clear_openai_api_key

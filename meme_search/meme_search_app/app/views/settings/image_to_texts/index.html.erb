@@ -191,4 +191,28 @@
       </div>
     <% end %>
   </div>
+
+  <div class="mt-8 bg-red-50 dark:bg-red-950/20 border border-red-200 dark:border-red-800/50 rounded-2xl p-6">
+    <div class="flex items-start gap-3 mb-4">
+      <svg class="w-5 h-5 text-red-500 mt-0.5 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
+        <path fill-rule="evenodd" d="M8.485 2.495c.673-1.167 2.357-1.167 3.03 0l6.28 10.875c.673 1.167-.17 2.625-1.516 2.625H3.72c-1.347 0-2.189-1.458-1.515-2.625L8.485 2.495zM10 5a.75.75 0 01.75.75v3.5a.75.75 0 01-1.5 0v-3.5A.75.75 0 0110 5zm0 9a1 1 0 100-2 1 1 0 000 2z" clip-rule="evenodd" />
+      </svg>
+      <div>
+        <h2 class="text-lg font-bold text-red-800 dark:text-red-300">Danger Zone</h2>
+        <p class="text-sm text-red-700 dark:text-red-400 mt-1">These actions are irreversible. Proceed with caution.</p>
+      </div>
+    </div>
+
+    <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 p-4 bg-white dark:bg-slate-800 rounded-xl border border-red-200 dark:border-red-800/50">
+      <div>
+        <h3 class="font-semibold text-gray-800 dark:text-white">Clear all descriptions and vectors</h3>
+        <p class="text-sm text-gray-600 dark:text-gray-400 mt-1">Removes all AI-generated descriptions and search embeddings from the database. Images remain intact, but text search and vector search will not work until descriptions are regenerated.</p>
+      </div>
+      <%= button_to "Clear descriptions & vectors",
+          clear_descriptions_settings_image_to_texts_path,
+          method: :delete,
+          data: { turbo_confirm: "This will permanently delete all AI-generated descriptions and search vectors for every image. This cannot be undone. Are you sure?" },
+          class: delete_button_classes %>
+    </div>
+  </div>
 </div>
