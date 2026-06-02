@@ -176,7 +176,7 @@ class ImageCoresControllerTest < ActionDispatch::IntegrationTest
     ImageEmbedding.create!(
       image_core: @image_core,
       snippet: "test snippet",
-      embedding: Array.new(384, 0.5)
+      embedding: Array.new(ENV.fetch("EMBEDDING_DIMENSIONS", 384).to_i, 0.5)
     )
 
     post search_items_image_cores_url, params: {
@@ -593,7 +593,7 @@ class ImageCoresControllerTest < ActionDispatch::IntegrationTest
     original_embedding = ImageEmbedding.create!(
       snippet: "old snippet",
       image_core: image_core,
-      embedding: Array.new(384, 0.5)
+      embedding: Array.new(ENV.fetch("EMBEDDING_DIMENSIONS", 384).to_i, 0.5)
     )
 
     original_embedding_id = original_embedding.id
@@ -605,7 +605,7 @@ class ImageCoresControllerTest < ActionDispatch::IntegrationTest
     # Expect multiple calls for multiple chunks (description is split into ~500 char chunks)
     # The description will create multiple embeddings
     10.times do
-      mock_model.expect :call, Array.new(384, 0.3), [ String ]
+      mock_model.expect :call, Array.new(ENV.fetch("EMBEDDING_DIMENSIONS", 384).to_i, 0.3), [ String ]
     end
 
     $embedding_model = mock_model

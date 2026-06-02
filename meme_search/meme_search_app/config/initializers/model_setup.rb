@@ -19,10 +19,10 @@ begin
   db_col = ActiveRecord::Base.connection.columns("image_embeddings").find { |c| c.name == "embedding" }
   db_limit = db_col&.limit
   if db_limit && $embedding_dimensions != db_limit
-    raise "Embedding model '#{embedding_model_name}' outputs #{$embedding_dimensions} dimensions " \
-          "but database column 'image_embeddings.embedding' has limit #{db_limit}. " \
-          "Create a migration (change_column :image_embeddings, :embedding, :vector, limit: #{$embedding_dimensions}) " \
-          "or choose a model that produces #{db_limit}-dimensional embeddings."
+    Rails.logger.info "[EmbeddingSync] Column dimension changed: #{db_limit} → #{$embedding_dimensions}. Migrating..."
+    ActiveRecord::Base.connection.execute("DELETE FROM image_embeddings")
+    ActiveRecord::Base.connection.change_column(:image_embeddings, :embedding, :vector, limit: $embedding_dimensions)
+    Rails.logger.info "[EmbeddingSync] Done. Existing embeddings cleared — regenerate from the UI."
   end
 rescue ActiveRecord::NoDatabaseError, ActiveRecord::StatementInvalid,
        ActiveRecord::ConnectionNotEstablished, PG::Error => e

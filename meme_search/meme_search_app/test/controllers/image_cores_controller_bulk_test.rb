@@ -259,7 +259,7 @@ class ImageCoresControllerBulkTest < ActionDispatch::IntegrationTest
     images_with_emb.each do |img|
       ImageEmbedding.create!(
         image_core: img,
-        embedding: Array.new(384, 0.0),
+        embedding: Array.new(ENV.fetch("EMBEDDING_DIMENSIONS", 384).to_i, 0.0),
         snippet: "test embedding snippet"
       )
     end
@@ -282,7 +282,7 @@ class ImageCoresControllerBulkTest < ActionDispatch::IntegrationTest
     # 3 images with embeddings
     images_with_emb = setup_bulk_test_images(count: 3)
     images_with_emb.each do |img|
-      ImageEmbedding.create!(image_core: img, embedding: Array.new(384, 0.0), snippet: "test embedding snippet")
+      ImageEmbedding.create!(image_core: img, embedding: Array.new(ENV.fetch("EMBEDDING_DIMENSIONS", 384).to_i, 0.0), snippet: "test embedding snippet")
     end
 
     # 2 images without embeddings

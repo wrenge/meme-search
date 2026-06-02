@@ -299,7 +299,7 @@ module Settings
       ImageTag.create!(image_core: orphaned, tag_name: tag)
       ImageEmbedding.create!(
         image_core: orphaned,
-        embedding: Array.new(384, 0.5),
+        embedding: Array.new(ENV.fetch("EMBEDDING_DIMENSIONS", 384).to_i, 0.5),
         snippet: "test snippet"
       )
 
