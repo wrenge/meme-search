@@ -15,9 +15,13 @@ else
   "unknown"
 end
 
-GIT_COMMIT = begin
-  result = `git rev-parse --short HEAD`.strip
-  $?.success? ? result : "unknown"
-rescue StandardError
-  "unknown"
+GIT_COMMIT = if ENV["GIT_COMMIT"].present?
+  ENV["GIT_COMMIT"]
+else
+  begin
+    result = `git rev-parse --short HEAD`.strip
+    $?.success? ? result : "unknown"
+  rescue StandardError
+    "unknown"
+  end
 end

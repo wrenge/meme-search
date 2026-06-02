@@ -17,11 +17,13 @@ RUN apt-get update -qq && \
     rm -rf /var/lib/apt/lists /var/cache/apt/archives
 
 # Set production environment
+ARG GIT_COMMIT=unknown
 ENV RAILS_ENV="production" \
     BUNDLE_DEPLOYMENT="1" \
     BUNDLE_PATH="/usr/local/bundle" \
     BUNDLE_WITHOUT="development" \
-    SECRET_KEY_BASE=password
+    SECRET_KEY_BASE=password \
+    GIT_COMMIT=$GIT_COMMIT
 
 # Throw-away build stage to reduce size of final image
 FROM base AS build

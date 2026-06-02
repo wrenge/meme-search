@@ -111,6 +111,8 @@ while [[ $# -gt 0 ]]; do
   esac
 done
 
+GIT_COMMIT=$(git rev-parse --short HEAD 2>/dev/null || echo "unknown")
+
 # Check if running from project root
 if [ ! -d "meme_search/meme_search_app" ] || [ ! -d "meme_search/image_to_text_generator" ]; then
   echo -e "${RED}Error: Must run from meme-search project root directory${NC}"
@@ -172,7 +174,7 @@ build_service() {
 
 # Build services
 if [ "$SERVICE" = "app" ] || [ "$SERVICE" = "all" ]; then
-  build_service "Rails App" "." "meme_search" "-f ./meme_search/meme_search_app/Dockerfile"
+  build_service "Rails App" "." "meme_search" "-f ./meme_search/meme_search_app/Dockerfile --build-arg GIT_COMMIT=$GIT_COMMIT"
 fi
 
 if [ "$SERVICE" = "python" ] || [ "$SERVICE" = "all" ]; then
