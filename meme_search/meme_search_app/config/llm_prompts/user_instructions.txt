@@ -1,0 +1,3 @@
+Describe the attached image as a comma-separated list of Russian phrases (3-5 words each).
+Rules: (1) Quote ALL visible text verbatim as its own phrase. (2) If multiple panels, describe each panel's content in sequence. (3) Name characters or actors ONLY if certain; otherwise describe appearance. (4) Cover: objects present, people and characters, action and pose, emotion and mood, scene context, meme template if recognized, source (show/film) if certain.
+Single words are FORBIDDEN. Output in Russian only.

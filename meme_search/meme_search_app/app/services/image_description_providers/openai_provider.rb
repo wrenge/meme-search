@@ -17,7 +17,8 @@ module ImageDescriptionProviders
       .grep(ActiveModel::Validations::LengthValidator)
       .filter_map { |validator| validator.options[:maximum] }
       .min || 500
-    MAX_COMPLETION_TOKENS = 160
+    MAX_COMPLETION_TOKENS = 400
+    PROMPTS_DIR_DEFAULT = "config/llm_prompts"
 
     def initialize(configuration = Configuration.current)
       @configuration = configuration
@@ -139,16 +140,8 @@ module ImageDescriptionProviders
       def request_body(image_core)
         {
           model: model,
-          max_tokens: MAX_COMPLETION_TOKENS,
-          messages: [
-            {
-              role: "user",
-              content: [
-                { type: "text", text: prompt },
-                { type: "image_url", image_url: { url: data_uri(image_core) } }
-              ]
-            }
-          ]
+          max_tokens: max_completion_tokens,
+          messages: build_messages(image_core)
         }
       end
 
@@ -231,8 +224,53 @@ module ImageDescriptionProviders
         configuration.openai_model.presence || DEFAULT_MODEL
       end
 
-      def prompt
-        ENV.fetch("LLM_USER_PROMPT", DEFAULT_PROMPT)
+      def build_messages(image_core)
+        # LLM_USER_PROMPT env var = explicit single-prompt override (backward compat)
+        if ENV["LLM_USER_PROMPT"].present?
+          return [{
+            role: "user",
+            content: [
+              { type: "text", text: ENV["LLM_USER_PROMPT"] },
+              { type: "image_url", image_url: { url: data_uri(image_core) } }
+            ]
+          }]
+        end
+
+        messages = []
+        sys          = read_prompt("system.txt")
+        instructions = read_prompt("user_instructions.txt")
+        few_shot     = read_prompt("few_shot_assistant.txt")
+        trigger      = read_prompt("final_trigger.txt") || DEFAULT_PROMPT
+
+        messages << { role: "system", content: sys } if sys
+        if instructions
+          messages << { role: "user", content: instructions }
+          messages << { role: "assistant", content: few_shot } if few_shot
+        end
+        messages << {
+          role: "user",
+          content: [
+            { type: "text", text: trigger },
+            { type: "image_url", image_url: { url: data_uri(image_core) } }
+          ]
+        }
+        messages
+      end
+
+      def read_prompt(filename)
+        path = File.join(prompts_dir, filename)
+        content = File.read(path).strip
+        content.presence
+      rescue Errno::ENOENT
+        nil
+      end
+
+      def prompts_dir
+        File.expand_path(ENV.fetch("LLM_PROMPTS_PATH", Rails.root.join(PROMPTS_DIR_DEFAULT).to_s))
+      end
+
+      def max_completion_tokens
+        ENV.fetch("LLM_MAX_TOKENS", MAX_COMPLETION_TOKENS).to_i
       end
   end
 end
