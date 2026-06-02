@@ -14,3 +14,10 @@ APP_VERSION = if File.exist?(VERSION_FILE)
 else
   "unknown"
 end
+
+GIT_COMMIT = begin
+  result = `git rev-parse --short HEAD`.strip
+  $?.success? ? result : "unknown"
+rescue StandardError
+  "unknown"
+end
