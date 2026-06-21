@@ -148,12 +148,15 @@ class ImageCoresController < ApplicationController
     image_cores = get_filtered_image_cores
 
     # Filter images to generate descriptions for.
-    # Include not_started images, and done images with a blank description.
+    # Include not_started and done images that have a blank description.
+    # not_started images with a non-blank description were manually described by
+    # the user (the update action sets a description without changing status), so
+    # they are excluded to avoid overwriting manual descriptions.
     # Explicitly exclude in_queue/processing/removing/failed — failed images
     # were previously matched by "description IS NULL" since fail_with_error!
     # never sets the description, causing them to be silently requeued and fail again.
-    base_scope = image_cores.where(status: :not_started)
-      .or(image_cores.where(status: :done).where("description IS NULL OR description = ?", ""))
+    base_scope = image_cores.where(status: [ :not_started, :done ])
+      .where("description IS NULL OR description = ?", "")
 
     images_without_descriptions =
       if params[:include_failed] == "1"
@@ -308,10 +311,11 @@ class ImageCoresController < ApplicationController
     image_cores = get_filtered_image_cores
 
     # Count images that need descriptions — same scope as bulk_generate_descriptions base_scope.
-    # Excludes failed images (they have null descriptions too, which the old OR description IS NULL
-    # accidentally included, causing them to be requeued by Generate All and immediately fail again).
-    @images_without_descriptions_count = ImageCore.where(status: :not_started)
-      .or(ImageCore.where(status: :done).where("description IS NULL OR description = ?", ""))
+    # Excludes not_started images with a manually-added description, and failed images (they have
+    # null descriptions too, which the old OR description IS NULL accidentally included, causing
+    # them to be requeued by Generate All and immediately fail again).
+    @images_without_descriptions_count = ImageCore.where(status: [ :not_started, :done ])
+      .where("description IS NULL OR description = ?", "")
       .count
 
     @failed_images_count = ImageCore.where(status: :failed).count

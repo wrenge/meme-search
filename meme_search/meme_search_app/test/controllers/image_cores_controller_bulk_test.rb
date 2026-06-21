@@ -170,25 +170,36 @@ class ImageCoresControllerBulkTest < ActionDispatch::IntegrationTest
     end
   end
 
-  # Test 1.6: Status 0 images even with descriptions
-  test "bulk_generate_descriptions should include status 0 images even with descriptions" do
-    # Image with status 0 but has description (unusual but possible)
-    img = ImageCore.create!(
+  # Test 1.6: not_started images with a manual description are skipped
+  test "bulk_generate_descriptions should skip not_started images with a manual description" do
+    # not_started image with a manually-added description should NOT be regenerated
+    manual = ImageCore.create!(
       name: "status_0_with_desc.jpg",
       image_path: @image_path,
       status: 0,
-      description: "Has description but status is 0"
+      description: "Manually added description"
+    )
+    # not_started image without a description should still be queued
+    needs_desc = ImageCore.create!(
+      name: "status_0_no_desc.jpg",
+      image_path: @image_path,
+      status: 0,
+      description: nil
     )
 
     mock_python_service_success do
       post bulk_generate_descriptions_image_cores_url
     end
 
-    # Should be queued (status=0 takes precedence per OR logic)
     operation = current_bulk_operation
     assert_equal 1, operation.total_count
-    assert_includes operation_image_ids(operation), img.id
-    assert_image_queued(img)
+    assert_not_includes operation_image_ids(operation), manual.id
+    assert_includes operation_image_ids(operation), needs_desc.id
+
+    # Manual description preserved, image untouched
+    assert_equal "not_started", manual.reload.status
+    assert_equal "Manually added description", manual.description
+    assert_image_queued(needs_desc)
   end
 
   # =============================================================================
