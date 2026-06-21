@@ -1,10 +1,14 @@
 class ChangeEmbeddingDimensions < ActiveRecord::Migration[7.2]
   def up
     dimensions = ENV.fetch("EMBEDDING_DIMENSIONS", 384).to_i
-    change_column :image_embeddings, :embedding, :vector, limit: dimensions
+    execute("DELETE FROM image_embeddings")
+    execute("ALTER TABLE image_embeddings DROP COLUMN embedding")
+    execute("ALTER TABLE image_embeddings ADD COLUMN embedding vector(#{dimensions})")
   end
 
   def down
-    change_column :image_embeddings, :embedding, :vector, limit: 384
+    execute("DELETE FROM image_embeddings")
+    execute("ALTER TABLE image_embeddings DROP COLUMN embedding")
+    execute("ALTER TABLE image_embeddings ADD COLUMN embedding vector(384)")
   end
 end

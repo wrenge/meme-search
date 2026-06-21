@@ -20,8 +20,10 @@ begin
   db_limit = db_col&.limit
   if db_limit && $embedding_dimensions != db_limit
     Rails.logger.info "[EmbeddingSync] Column dimension changed: #{db_limit} → #{$embedding_dimensions}. Migrating..."
-    ActiveRecord::Base.connection.execute("DELETE FROM image_embeddings")
-    ActiveRecord::Base.connection.change_column(:image_embeddings, :embedding, :vector, limit: $embedding_dimensions)
+    conn = ActiveRecord::Base.connection
+    conn.execute("DELETE FROM image_embeddings")
+    conn.execute("ALTER TABLE image_embeddings DROP COLUMN embedding")
+    conn.execute("ALTER TABLE image_embeddings ADD COLUMN embedding vector(#{$embedding_dimensions.to_i})")
     Rails.logger.info "[EmbeddingSync] Done. Existing embeddings cleared — regenerate from the UI."
   end
 rescue ActiveRecord::NoDatabaseError, ActiveRecord::StatementInvalid,
