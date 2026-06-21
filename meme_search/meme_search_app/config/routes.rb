@@ -1,4 +1,9 @@
 Rails.application.routes.draw do
+  # Token-authenticated, machine-facing API (e.g. the Telegram intake bot)
+  namespace :api do
+    resources :memes, only: [ :create ]
+  end
+
   resources :image_to_texts
   resources :image_embeddings
   resources :image_tags
